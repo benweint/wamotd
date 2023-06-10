@@ -14,7 +14,7 @@ medium_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.tt
 large_font = ImageFont.truetype(
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24
 )
-icon_font = ImageFont.truetype("./meteocons.ttf", 48)
+icon_font = ImageFont.truetype("./resources/meteocons.ttf", 48)
 
 # Map the OpenWeatherMap icon code to the appropriate font character
 # See http://www.alessioatzeni.com/meteocons/ for icons
