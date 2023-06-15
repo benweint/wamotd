@@ -1,19 +1,11 @@
-# SPDX-FileCopyrightText: 2020 Melissa LeBlanc-Williams for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
-
-from datetime import datetime
-import json
 from PIL import Image, ImageDraw, ImageFont
-from adafruit_epd.epd import Adafruit_EPD
+import json
+from datetime import datetime
+from typing import Any, Dict
 
-small_font = ImageFont.truetype(
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16
-)
-medium_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
-large_font = ImageFont.truetype(
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24
-)
+small_font = ImageFont.truetype("./resources/DejaVuSans-Bold.ttf", 16)
+medium_font = ImageFont.truetype("./resources/DejaVuSans.ttf", 20)
+large_font = ImageFont.truetype("./resources/DejaVuSans-Bold.ttf", 24)
 icon_font = ImageFont.truetype("./resources/meteocons.ttf", 48)
 
 # Map the OpenWeatherMap icon code to the appropriate font character
@@ -43,9 +35,17 @@ ICON_MAP = {
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+# RGB Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
-class Weather_Graphics:
-    def __init__(self, display, *, am_pm=True, celsius=True):
+
+class Renderer:
+    def __init__(
+        self, width: int, height: int, am_pm: bool = True, celsius: bool = True
+    ) -> None:
+        self.width = width
+        self.height = height
         self.am_pm = am_pm
         self.celsius = celsius
 
@@ -53,69 +53,50 @@ class Weather_Graphics:
         self.medium_font = medium_font
         self.large_font = large_font
 
-        self.display = display
+        self._weather_icon = ""
+        self._main_text = ""
+        self._temperature = ""
+        self._description = ""
+        self._time_text = ""
 
-        self._weather_icon = None
-        self._city_name = None
-        self._main_text = None
-        self._temperature = None
-        self._description = None
-        self._time_text = None
+    def render(self, weather_response: bytes) -> Image.Image:
+        weather = json.loads(weather_response.decode("utf-8"))
 
-    def display_weather(self, weather):
-        weather = json.loads(weather.decode("utf-8"))
+        now = datetime.now()
+        self._time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
 
         # set the icon/background
-        self._weather_icon = ICON_MAP[weather["weather"][0]["icon"]]
+        today = weather["daily"][0]
+        self._weather_icon = ICON_MAP[today["weather"][0]["icon"]]
 
-        city_name = weather["name"] + ", " + weather["sys"]["country"]
-        print(city_name)
-        self._city_name = city_name
-
-        main = weather["weather"][0]["main"]
-        print(main)
+        main = today["weather"][0]["main"]
         self._main_text = main
 
-        temperature = weather["main"]["temp"] - 273.15  # its...in kelvin
-        print(temperature)
+        temperature = weather["current"]["temp"] - 273.15  # its...in kelvin
         if self.celsius:
             self._temperature = "%d °C" % temperature
         else:
             self._temperature = "%d °F" % ((temperature * 9 / 5) + 32)
 
-        description = weather["weather"][0]["description"]
+        description = weather["current"]["weather"][0]["description"]
         description = description[0].upper() + description[1:]
         print(description)
         self._description = description
         # "thunderstorm with heavy drizzle"
 
-        self.update_time()
-
-    def update_time(self):
-        now = datetime.now()
-        self._time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
-        self.update_display()
-
-    def update_display(self):
-        self.display.fill(Adafruit_EPD.WHITE)
-        image = Image.new("RGB", (self.display.width, self.display.height), color=WHITE)
+        image = Image.new("RGB", (self.width, self.height), color=WHITE)
         draw = ImageDraw.Draw(image)
 
         # Draw the Icon
         (font_width, font_height) = icon_font.getsize(self._weather_icon)
         draw.text(
             (
-                self.display.width // 2 - font_width // 2,
-                self.display.height // 2 - font_height // 2 - 5,
+                self.width // 2 - font_width // 2,
+                self.height // 2 - font_height // 2 - 5,
             ),
             self._weather_icon,
             font=icon_font,
             fill=BLACK,
-        )
-
-        # Draw the city
-        draw.text(
-            (5, 5), self._city_name, font=self.medium_font, fill=BLACK,
         )
 
         # Draw the time
@@ -130,7 +111,7 @@ class Weather_Graphics:
         # Draw the main text
         (font_width, font_height) = large_font.getsize(self._main_text)
         draw.text(
-            (5, self.display.height - font_height * 2),
+            (5, self.height - font_height * 2),
             self._main_text,
             font=self.large_font,
             fill=BLACK,
@@ -139,7 +120,7 @@ class Weather_Graphics:
         # Draw the description
         (font_width, font_height) = small_font.getsize(self._description)
         draw.text(
-            (5, self.display.height - font_height - 5),
+            (5, self.height - font_height - 5),
             self._description,
             font=self.small_font,
             fill=BLACK,
@@ -149,14 +130,12 @@ class Weather_Graphics:
         (font_width, font_height) = large_font.getsize(self._temperature)
         draw.text(
             (
-                self.display.width - font_width - 5,
-                self.display.height - font_height * 2,
+                self.width - font_width - 5,
+                self.height - font_height * 2,
             ),
             self._temperature,
             font=self.large_font,
             fill=BLACK,
         )
 
-        self.display.image(image)
-        print("BMW: hooooo")
-        self.display.display()
+        return image
