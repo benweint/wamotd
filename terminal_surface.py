@@ -1,14 +1,16 @@
 import json
 import io
 import sys
-from surface import Surface
+from renderer import Renderer
 from subprocess import Popen, PIPE
 from typing import Any, Dict
 
 
 class TerminalSurface:
-    def __init__(self, renderer: Surface) -> None:
+    def __init__(self, renderer: Renderer, width: int, height: int) -> None:
         self.renderer = renderer
+        self.width = width
+        self.height = height
 
     def update(self, weather_response: bytes) -> None:
         image = self.renderer.render(weather_response)

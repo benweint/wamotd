@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import json
 from datetime import datetime
 from typing import Any, Dict
+import math
 
 small_font = ImageFont.truetype("./resources/DejaVuSans-Bold.ttf", 16)
 medium_font = ImageFont.truetype("./resources/DejaVuSans.ttf", 20)
@@ -41,101 +42,84 @@ BLACK = (0, 0, 0)
 
 
 class Renderer:
-    def __init__(
-        self, width: int, height: int, am_pm: bool = True, celsius: bool = True
-    ) -> None:
+    def __init__(self, width: int, height: int, motd: str = "") -> None:
         self.width = width
         self.height = height
-        self.am_pm = am_pm
-        self.celsius = celsius
 
-        self.small_font = small_font
-        self.medium_font = medium_font
-        self.large_font = large_font
+        self.motd = motd
 
         self._weather_icon = ""
         self._main_text = ""
-        self._temperature = ""
+        self._high_temp = ""
+        self._current_temp = ""
         self._description = ""
         self._time_text = ""
+
+    def format_temperature(self, temp: float) -> str:
+        return "%d°" % temp
+
+    def render_text(
+        self, draw, x: int, y: int, text: str, font, xalign=None, yalign=None
+    ):
+        (text_width, text_height) = font.getsize(text)
+
+        if not xalign:
+            xalign = "left" if x >= 0 else "right"
+
+        if not yalign:
+            yalign = "top" if y >= 0 else "bottom"
+
+        if x < 0:
+            x += self.width
+        if y < 0:
+            y += self.height
+
+        if xalign == "right":
+            x -= text_width
+        elif xalign == "center":
+            x -= text_width // 2
+
+        if yalign == "bottom":
+            y -= text_height
+        elif yalign == "center":
+            y -= text_height // 2
+
+        draw.text((x, y), text, font=font, fill=BLACK)
 
     def render(self, weather_response: bytes) -> Image.Image:
         weather = json.loads(weather_response.decode("utf-8"))
 
         now = datetime.now()
-        self._time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
+        time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
 
         # set the icon/background
         today = weather["daily"][0]
-        self._weather_icon = ICON_MAP[today["weather"][0]["icon"]]
+        todays_weather = today["weather"][0]
 
-        main = today["weather"][0]["main"]
-        self._main_text = main
-
-        temperature = weather["current"]["temp"] - 273.15  # its...in kelvin
-        if self.celsius:
-            self._temperature = "%d °C" % temperature
-        else:
-            self._temperature = "%d °F" % ((temperature * 9 / 5) + 32)
-
-        description = weather["current"]["weather"][0]["description"]
-        description = description[0].upper() + description[1:]
-        print(description)
-        self._description = description
-        # "thunderstorm with heavy drizzle"
+        weather_icon = ICON_MAP[todays_weather["icon"]]
+        main_text = todays_weather["main"]
+        description = todays_weather["description"].capitalize()
+        high_temp = self.format_temperature(today["temp"]["max"])
 
         image = Image.new("RGB", (self.width, self.height), color=WHITE)
         draw = ImageDraw.Draw(image)
 
-        # Draw the Icon
-        (font_width, font_height) = icon_font.getsize(self._weather_icon)
-        draw.text(
-            (
-                self.width // 2 - font_width // 2,
-                self.height // 2 - font_height // 2 - 5,
-            ),
-            self._weather_icon,
-            font=icon_font,
-            fill=BLACK,
-        )
+        # Draw the time (top center)
+        centerx = self.width // 2
+        self.render_text(draw, centerx, 4, time_text, small_font, xalign="center")
+        draw.line([(0, 25), (self.width, 25)], fill=BLACK)
 
-        # Draw the time
-        (font_width, font_height) = medium_font.getsize(self._time_text)
-        draw.text(
-            (5, font_height * 2 - 5),
-            self._time_text,
-            font=self.medium_font,
-            fill=BLACK,
-        )
+        # Draw the icon
+        self.render_text(draw, 5, 30, weather_icon, icon_font)
 
         # Draw the main text
-        (font_width, font_height) = large_font.getsize(self._main_text)
-        draw.text(
-            (5, self.height - font_height * 2),
-            self._main_text,
-            font=self.large_font,
-            fill=BLACK,
-        )
-
-        # Draw the description
-        (font_width, font_height) = small_font.getsize(self._description)
-        draw.text(
-            (5, self.height - font_height - 5),
-            self._description,
-            font=self.small_font,
-            fill=BLACK,
-        )
+        self.render_text(draw, 65, 35, main_text, large_font)
+        self.render_text(draw, 65, 65, description, small_font)
 
         # Draw the temperature
-        (font_width, font_height) = large_font.getsize(self._temperature)
-        draw.text(
-            (
-                self.width - font_width - 5,
-                self.height - font_height * 2,
-            ),
-            self._temperature,
-            font=self.large_font,
-            fill=BLACK,
-        )
+        self.render_text(draw, -5, 30, high_temp, large_font)
+
+        if self.motd:
+            self.render_text(draw, centerx, -5, self.motd, small_font, xalign="center")
 
         return image

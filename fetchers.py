@@ -8,7 +8,8 @@ DATA_SOURCE_URL = "https://api.openweathermap.org/data/3.0/onecall"
 
 
 class Fetcher(Protocol):
-    def fetch(self) -> bytes: ...
+    def fetch(self) -> bytes:
+        ...
 
 
 class OpenWeatherFetcher:
@@ -25,14 +26,12 @@ class OpenWeatherFetcher:
         self.url = DATA_SOURCE_URL + "?" + urllib.parse.urlencode(self.params)
 
     def fetch(self) -> bytes:
-        response = urllib.request.urlopen(DATA_SOURCE_URL)
+        response = urllib.request.urlopen(self.url)
         if response.status == 200:
             value = response.read()
-            print("Response is", value)
+            return value
         else:
             raise ValueError(f"bad HTTP response {response.status}")
-
-        return response
 
 
 class ExampleFetcher:
