@@ -1,0 +1,35 @@
+<div class="wrapper" id="preview-wrapper">
+  <img src="/preview?ts={{ image_ts }}" />
+</div>
+
+<div class="wrapper">
+	<label for="motd">
+	  Message of the Day
+    <input 
+      type="text"
+      id="motd"
+      name="motd"
+      hx-post="/motd"
+      hx-trigger="keyup changed delay:500ms"
+      hx-target="main"
+      value="{{ motd }}"
+    />
+  </label>
+  <span role="button" hx-delete="/motd" hx-target="main">
+    Clear
+  </span>
+</div>
+
+<div class="wrapper">
+  Forecast updated {{ time_since_last_update }}<br/>
+  MOTD updated {{ time_since_motd_update }}<br/>
+  Screen updated {{ time_since_screen_update }}
+</div>
+
+<div class="wrapper">
+  <details>
+    <summary>Most recent weather response</summary>
+    <p style="margin: 1em 0">Fetched via <code>{{ fetch_url }}</code></p>
+    <pre style="padding: 2em">{{ most_recent_forecast }}</pre>
+  </details>
+</div>

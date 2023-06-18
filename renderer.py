@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import json
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import math
 
 small_font = ImageFont.truetype("./resources/DejaVuSans-Bold.ttf", 16)
@@ -42,18 +42,10 @@ BLACK = (0, 0, 0)
 
 
 class Renderer:
-    def __init__(self, width: int, height: int, motd: str = "") -> None:
+    def __init__(self, width: int, height: int, motd: Optional[str]=None) -> None:
         self.width = width
         self.height = height
-
         self.motd = motd
-
-        self._weather_icon = ""
-        self._main_text = ""
-        self._high_temp = ""
-        self._current_temp = ""
-        self._description = ""
-        self._time_text = ""
 
     def format_temperature(self, temp: float) -> str:
         return "%d°" % temp
@@ -86,9 +78,9 @@ class Renderer:
 
         draw.text((x, y), text, font=font, fill=BLACK)
 
-    def render(self, weather_response: bytes) -> Image.Image:
-        weather = json.loads(weather_response.decode("utf-8"))
-
+    def render(
+        self, weather: Dict[str, Any]
+    ) -> Image.Image:
         now = datetime.now()
         time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
 
@@ -119,6 +111,7 @@ class Renderer:
         # Draw the temperature
         self.render_text(draw, -5, 30, high_temp, large_font)
 
+        print(f'motd = {self.motd}')
         if self.motd:
             self.render_text(draw, centerx, -5, self.motd, small_font, xalign="center")
 

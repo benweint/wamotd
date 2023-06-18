@@ -15,7 +15,7 @@ from typing import Any, Dict
 
 
 class DeviceSurface:
-    def __init__(self, display: Any, renderer: Renderer):
+    def __init__(self, width: int, height: int, renderer: Renderer):
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
         ecs = digitalio.DigitalInOut(board.CE0)
         dc = digitalio.DigitalInOut(board.D22)
@@ -23,8 +23,8 @@ class DeviceSurface:
         busy = digitalio.DigitalInOut(board.D17)
 
         display = Adafruit_SSD1680(
-            122,
-            250,
+            width,
+            height,
             spi,
             cs_pin=ecs,
             dc_pin=dc,
@@ -37,7 +37,7 @@ class DeviceSurface:
         self.display = display
         self.renderer = renderer
 
-    def update(self, weather_response: bytes) -> None:
+    def update(self, weather_response: Dict[str,Any]) -> None:
         image = self.renderer.render(weather_response)
         self.display.fill(Adafruit_EPD.WHITE)
         self.display.image(image)

@@ -1,5 +1,7 @@
 import urllib.request
 import urllib.parse
+import json
+from typing import Any, Dict
 from typing_extensions import Protocol
 
 
@@ -8,7 +10,10 @@ DATA_SOURCE_URL = "https://api.openweathermap.org/data/3.0/onecall"
 
 
 class Fetcher(Protocol):
-    def fetch(self) -> bytes:
+    def fetch(self) -> Dict[str, Any]:
+        ...
+
+    def url(self) -> str:
         ...
 
 
@@ -23,21 +28,26 @@ class OpenWeatherFetcher:
             "appid": appid,
             "units": units,
         }
-        self.url = DATA_SOURCE_URL + "?" + urllib.parse.urlencode(self.params)
+        self._url = DATA_SOURCE_URL + "?" + urllib.parse.urlencode(self.params)
 
-    def fetch(self) -> bytes:
-        response = urllib.request.urlopen(self.url)
+    def fetch(self) -> Dict[str, Any]:
+        response = urllib.request.urlopen(self._url)
         if response.status == 200:
-            value = response.read()
-            return value
+            return json.load(response)
         else:
-            raise ValueError(f"bad HTTP response {response.status}")
+            raise ValueError(f"bad HTTP response {response.status}, body = {response.read()}")
+
+    def url(self) -> str:
+        return self._url
 
 
 class ExampleFetcher:
     def __init__(self, response_path: str) -> None:
-        with open(response_path, "rb") as f:
-            self.response = f.read()
+        self.response_path = response_path
 
-    def fetch(self) -> bytes:
-        return self.response
+    def fetch(self) -> Dict[str, Any]:
+        with open(self.response_path, "rb") as f:
+            return json.load(f)
+
+    def url(self) -> str:
+        return self.response_path
