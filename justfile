@@ -4,7 +4,11 @@ run-local:
 	python server.py
 
 sync:
-	rsync -av -e ssh . ben@weatherpi.local:~/wamotd
+	rsync --exclude .venv --exclude .mypy  --exclude __pycache__ -av -e ssh . ben@weatherpi.local:~/wamotd
+	ssh ben@weatherpi.local "sudo cp ~/wamotd/wamotd@.service /etc/systemd/system"
+
+restart:
+	ssh ben@weatherpi.local "sudo systemctl restart wamotd@ben.service"
 
 format:
 	python -m black .

@@ -42,7 +42,7 @@ BLACK = (0, 0, 0)
 
 
 class Renderer:
-    def __init__(self, width: int, height: int, motd: Optional[str]=None) -> None:
+    def __init__(self, width: int, height: int, motd: Optional[str] = None) -> None:
         self.width = width
         self.height = height
         self.motd = motd
@@ -51,8 +51,15 @@ class Renderer:
         return "%d°" % temp
 
     def render_text(
-        self, draw, x: int, y: int, text: str, font, xalign=None, yalign=None
-    ):
+        self,
+        draw: ImageDraw.ImageDraw,
+        x: int,
+        y: int,
+        text: str,
+        font: ImageFont.FreeTypeFont,
+        xalign: Optional[str] = None,
+        yalign: Optional[str] = None,
+    ) -> None:
         (text_width, text_height) = font.getsize(text)
 
         if not xalign:
@@ -78,11 +85,9 @@ class Renderer:
 
         draw.text((x, y), text, font=font, fill=BLACK)
 
-    def render(
-        self, weather: Dict[str, Any]
-    ) -> Image.Image:
+    def render(self, weather: Dict[str, Any]) -> Image.Image:
         now = datetime.now()
-        time_text = now.strftime("%I:%M %p").lstrip("0").replace(" 0", " ")
+        time_text = now.strftime("%A, %B %d").replace(" 0", " ")
 
         # set the icon/background
         today = weather["daily"][0]
@@ -111,7 +116,7 @@ class Renderer:
         # Draw the temperature
         self.render_text(draw, -5, 30, high_temp, large_font)
 
-        print(f'motd = {self.motd}')
+        print(f"motd = {self.motd}")
         if self.motd:
             self.render_text(draw, centerx, -5, self.motd, small_font, xalign="center")
 

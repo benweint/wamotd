@@ -31,11 +31,16 @@ class OpenWeatherFetcher:
         self._url = DATA_SOURCE_URL + "?" + urllib.parse.urlencode(self.params)
 
     def fetch(self) -> Dict[str, Any]:
+        print(self._url)
         response = urllib.request.urlopen(self._url)
         if response.status == 200:
-            return json.load(response)
+            decoded = json.load(response)
+            assert isinstance(decoded, Dict)
+            return decoded
         else:
-            raise ValueError(f"bad HTTP response {response.status}, body = {response.read()}")
+            raise ValueError(
+                f"bad HTTP response {response.status}, body = {response.read()}"
+            )
 
     def url(self) -> str:
         return self._url
@@ -47,7 +52,9 @@ class ExampleFetcher:
 
     def fetch(self) -> Dict[str, Any]:
         with open(self.response_path, "rb") as f:
-            return json.load(f)
+            decoded = json.load(f)
+            assert isinstance(decoded, Dict)
+            return decoded
 
     def url(self) -> str:
         return self.response_path

@@ -12,10 +12,11 @@ from renderer import Renderer
 from adafruit_epd.epd import Adafruit_EPD
 from adafruit_epd.ssd1680 import Adafruit_SSD1680
 from typing import Any, Dict
+from PIL import Image
 
 
 class DeviceSurface:
-    def __init__(self, width: int, height: int, renderer: Renderer):
+    def __init__(self, width: int, height: int):
         spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
         ecs = digitalio.DigitalInOut(board.CE0)
         dc = digitalio.DigitalInOut(board.D22)
@@ -23,8 +24,8 @@ class DeviceSurface:
         busy = digitalio.DigitalInOut(board.D17)
 
         display = Adafruit_SSD1680(
-            width,
             height,
+            width,
             spi,
             cs_pin=ecs,
             dc_pin=dc,
@@ -35,10 +36,8 @@ class DeviceSurface:
         display.rotation = 1
 
         self.display = display
-        self.renderer = renderer
 
-    def update(self, weather_response: Dict[str,Any]) -> None:
-        image = self.renderer.render(weather_response)
+    def update(self, image: Image.Image) -> None:
         self.display.fill(Adafruit_EPD.WHITE)
         self.display.image(image)
         self.display.display()

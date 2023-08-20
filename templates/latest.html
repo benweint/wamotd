@@ -1,23 +1,20 @@
-<div class="wrapper" id="preview-wrapper">
+<div class="wrapper" id="preview-wrapper" style="height: {{ height }}px">
   <img src="/preview?ts={{ image_ts }}" />
 </div>
 
 <div class="wrapper">
-	<label for="motd">
-	  Message of the Day
-    <input 
-      type="text"
-      id="motd"
-      name="motd"
-      hx-post="/motd"
-      hx-trigger="keyup changed delay:500ms"
-      hx-target="main"
-      value="{{ motd }}"
-    />
-  </label>
-  <span role="button" hx-delete="/motd" hx-target="main">
-    Clear
-  </span>
+  <form>
+  	<label for="motd">
+  	  Message of the Day
+      <input type="text" id="motd" name="motd" value="{{ motd }}" />
+    </label>
+    <span role="button" hx-delete="/motd" hx-target="main">
+      Clear
+    </span>
+    <span role="button" hx-post="/motd" hx-target="main">
+      Set
+    </span>
+  </form>
 </div>
 
 <div class="wrapper">

@@ -1,0 +1,10 @@
+[Unit]
+Description=Weather and Message of the Day unit file.
+
+[Service]
+User=%I
+WorkingDirectory=/home/%I/wamotd
+ExecStart=/bin/bash /home/%I/wamotd/start.sh
+
+[Install]
+WantedBy=multi-user.target
