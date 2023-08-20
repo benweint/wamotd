@@ -41,9 +41,7 @@ def create_app() -> Flask:
     try:
         from device_surface import DeviceSurface
 
-        ds = DeviceSurface(
-            app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"]
-        )
+        ds = DeviceSurface(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
     except NotImplementedError:
         print(
             "Skipping initialization of device surface, since we don't appear to be running on a supported board"
@@ -81,7 +79,7 @@ def create_app() -> Flask:
             try:
                 update_screen()
             except Exception as e:
-                print(f'Error while updating screen: {e}')
+                print(f"Error while updating screen: {e}")
             print(f"Sleeping {interval}s before next re-render ...")
             time.sleep(interval)
 
@@ -103,11 +101,11 @@ def create_app() -> Flask:
 
     @app.route("/motd", methods=["POST"])
     def update_motd() -> None:
-        return set_motd(request.form['motd'])
+        return set_motd(request.form["motd"])
 
     @app.route("/motd", methods=["DELETE"])
     def clear_motd() -> None:
-        return set_motd('')
+        return set_motd("")
 
     def set_motd(motd: str) -> None:
         ctx.renderer.motd = motd
@@ -134,7 +132,7 @@ def create_app() -> Flask:
 
         return render_template(
             template,
-            height=app.config['DISPLAY_HEIGHT'],
+            height=app.config["DISPLAY_HEIGHT"],
             image_ts=datetime.now(),
             fetch_url=ctx.fetcher.url(),
             time_since_last_update=format_last_update_time(ctx.last_fetched_at),
