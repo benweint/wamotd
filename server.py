@@ -4,7 +4,7 @@ from fetchers import Fetcher, OpenWeatherFetcher, ExampleFetcher
 from urllib.parse import quote_plus
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Union
-from device_types import DeviceSurface
+from device_types import Surface
 import threading
 import io
 import time
@@ -12,7 +12,9 @@ import json
 
 
 class Context:
-    def __init__(self, fetcher: Fetcher, renderer: Renderer, ds: DeviceSurface) -> None:
+    def __init__(
+        self, fetcher: Fetcher, renderer: Renderer, ds: Optional[Surface]
+    ) -> None:
         self.fetcher = fetcher
         self.renderer = renderer
         self.last_fetch_response = {}  # type: Union[Dict[str,Any],Exception]
@@ -27,7 +29,7 @@ def create_app() -> Flask:
     app.config.from_pyfile("settings.py")
 
     if app.config["EXAMPLE_RESPONSE"]:
-        fetcher = ExampleFetcher(app.config["EXAMPLE_RESPONSE"])
+        fetcher = ExampleFetcher(app.config["EXAMPLE_RESPONSE"])  # type: Fetcher
     else:
         fetcher = OpenWeatherFetcher(
             app.config["OPEN_WEATHER_TOKEN"],
@@ -37,7 +39,7 @@ def create_app() -> Flask:
 
     renderer = Renderer(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
 
-    ds = None  # type: Optional[DeviceSurface]
+    ds = None  # type: Optional[Surface]
     try:
         from device_surface import DeviceSurface
 
@@ -110,7 +112,7 @@ def create_app() -> Flask:
     def set_motd(motd: str) -> None:
         ctx.renderer.motd = motd
         ctx.motd_updated_at = datetime.now()
-        return render_latest("latest.html")
+        render_latest("latest.html")
 
     @app.route("/fetch")
     def fetch():

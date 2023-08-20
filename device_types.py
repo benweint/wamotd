@@ -1,10 +1,11 @@
 from renderer import Renderer
-from typing import Any, Dict
+from typing import Any, Dict, Protocol
+from PIL import Image
 
 
-class DeviceSurface:
-    def __init__(self, width: int, height: int, renderer: Renderer) -> None:
+class Surface(Protocol):
+    def __init__(self, width: int, height: int) -> None:
         ...
 
-    def update(self, weather_response: Dict[str, Any]) -> None:
+    def update(self, image: Image.Image) -> None:
         ...
