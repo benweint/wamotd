@@ -15,7 +15,6 @@ just sync
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable wamotd@$USER.service
-sudo reboot
 ```
 
 ### Viewing logs

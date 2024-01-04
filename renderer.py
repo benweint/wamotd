@@ -116,7 +116,6 @@ class Renderer:
         # Draw the temperature
         self.render_text(draw, -5, 30, high_temp, large_font)
 
-        print(f"motd = {self.motd}")
         if self.motd:
             self.render_text(draw, centerx, -5, self.motd, small_font, xalign="center")
 
