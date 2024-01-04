@@ -4,8 +4,11 @@ run-local:
 	python server.py
 
 sync:
-	rsync --exclude .venv --exclude .mypy  --exclude __pycache__ -av -e ssh . ben@weatherpi.local:~/wamotd
+	rsync --exclude .venv --exclude .mypy --exclude .mypy_cache --exclude .git --exclude __pycache__ -av -e ssh . ben@weatherpi.local:~/wamotd
 	ssh ben@weatherpi.local "sudo cp ~/wamotd/wamotd@.service /etc/systemd/system"
+
+deps:
+	ssh ben@weatherpi.local "cd ~/wamotd && pip install -r requirements.txt"
 
 restart:
 	ssh ben@weatherpi.local "sudo systemctl restart wamotd@ben.service"
