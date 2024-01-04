@@ -60,7 +60,7 @@ class Renderer:
         xalign: Optional[str] = None,
         yalign: Optional[str] = None,
     ) -> None:
-        (text_width, text_height) = font.getsize(text)
+        (_, _, text_width, text_height) = font.getbbox(text)
 
         if not xalign:
             xalign = "left" if x >= 0 else "right"
