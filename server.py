@@ -2,9 +2,10 @@ from flask import Flask, request, render_template, send_file
 from renderer import Renderer
 from fetchers import Fetcher, OpenWeatherFetcher, ExampleFetcher
 from urllib.parse import quote_plus
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as datetime_time
 from typing import Any, Dict, Optional, Union
 from device_types import Surface
+from screensaver import Screensaver
 import threading
 import io
 import time
@@ -13,10 +14,15 @@ import json
 
 class Context:
     def __init__(
-        self, fetcher: Fetcher, renderer: Renderer, ds: Optional[Surface]
+        self,
+        fetcher: Fetcher,
+        renderer: Renderer,
+        screensaver: Screensaver,
+        ds: Optional[Surface],
     ) -> None:
         self.fetcher = fetcher
         self.renderer = renderer
+        self.screensaver = screensaver
         self.last_fetch_response = {}  # type: Union[Dict[str,Any],Exception]
         self.last_fetched_at = None  # type: Optional[datetime]
         self.motd_updated_at = None  # type: Optional[datetime]
@@ -38,6 +44,7 @@ def create_app() -> Flask:
         )
 
     renderer = Renderer(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
+    screensaver = Screensaver(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
 
     ds = None  # type: Optional[Surface]
     try:
@@ -50,7 +57,7 @@ def create_app() -> Flask:
         )
 
     b = threading.Barrier(2, timeout=5)
-    ctx = Context(fetcher, renderer, ds)
+    ctx = Context(fetcher, renderer, screensaver, ds)
 
     def fetch_forecast() -> Union[Dict[str, Any], Exception]:
         print("Refreshing forecast ...")
@@ -88,8 +95,18 @@ def create_app() -> Flask:
     def update_screen():
         print(f"Re-rendering ...")
         if ctx.ds:
-            ctx.ds.update(renderer.render(ctx.last_fetch_response))
+            if is_night():
+                img = ctx.screensaver.render()
+            else:
+                img = ctx.renderer.render(ctx.last_fetch_response)
+            ctx.ds.update(img)
         ctx.screen_updated_at = datetime.now()
+
+    def is_night() -> bool:
+        t = datetime.now().time()
+        night_start = datetime_time(22, 0)
+        night_end = datetime_time(6, 5)
+        return t > night_start or t < night_end
 
     fetcher_thread = threading.Thread(name="fetcher", daemon=True, target=poll_fetcher)
     fetcher_thread.start()

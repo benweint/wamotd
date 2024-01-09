@@ -36,10 +36,6 @@ ICON_MAP = {
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# RGB Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-
 
 class Renderer:
     def __init__(self, width: int, height: int, motd: Optional[str] = None) -> None:
