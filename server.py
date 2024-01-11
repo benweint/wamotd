@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file
+from flask import Flask, Response, request, make_response, render_template, send_file
 from renderer import Renderer
 from fetchers import Fetcher, OpenWeatherFetcher, ExampleFetcher
 from urllib.parse import quote_plus
@@ -10,6 +10,8 @@ import threading
 import io
 import time
 import json
+import socket
+import sys
 
 
 class Context:
@@ -65,12 +67,20 @@ def create_app() -> Flask:
             ctx.last_fetch_response = ctx.fetcher.fetch()
         except Exception as e:
             print(f"Refreshing forecast failed: {e}")
+            # For some reason, I've been seeing issues with DNS resolution that persist until the process
+            # restarts. In the case where we see two such failures in a row, just exit and let systemd
+            # restart us.
+            if isinstance(ctx.last_fetch_response, socket.gaierror) and isinstance(
+                e, socket.gaierror
+            ):
+                print("Exiting after two consecutive DNS errors ...")
+                sys.exit(1)
             ctx.last_fetch_response = e
 
         ctx.last_fetched_at = datetime.now()
         return ctx.last_fetch_response
 
-    def poll_fetcher():
+    def poll_fetcher() -> None:
         interval = app.config["WEATHER_REFRESH_INTERVAL"]
         fetch_forecast()
         b.wait()
@@ -80,7 +90,7 @@ def create_app() -> Flask:
             print(f"Sleeping {interval}s until next forecast update ...")
             time.sleep(interval)
 
-    def render_loop():
+    def render_loop() -> None:
         interval = app.config["RENDER_INTERVAL"]
         print(f"Re-rendering every {interval}s ...")
         b.wait()
@@ -92,13 +102,14 @@ def create_app() -> Flask:
             print(f"Sleeping {interval}s before next re-render ...")
             time.sleep(interval)
 
-    def update_screen():
+    def update_screen() -> None:
         print(f"Re-rendering ...")
         if ctx.ds:
             if is_night():
                 img = ctx.screensaver.render()
             else:
-                img = ctx.renderer.render(ctx.last_fetch_response)
+                if not isinstance(ctx.last_fetch_response, Exception):
+                    img = ctx.renderer.render(ctx.last_fetch_response)
             ctx.ds.update(img)
         ctx.screen_updated_at = datetime.now()
 
@@ -115,35 +126,33 @@ def create_app() -> Flask:
     render_thread.start()
 
     @app.route("/")
-    def root():
+    def root() -> str:
         return render_latest("index.html")
 
     @app.route("/motd", methods=["POST"])
-    def update_motd() -> None:
+    def update_motd() -> str:
         return set_motd(request.form["motd"])
 
     @app.route("/motd", methods=["DELETE"])
-    def clear_motd() -> None:
+    def clear_motd() -> str:
         return set_motd("")
 
-    def set_motd(motd: str) -> None:
+    def set_motd(motd: str) -> str:
         ctx.renderer.motd = motd
         ctx.motd_updated_at = datetime.now()
-        render_latest("latest.html")
-
-    @app.route("/fetch")
-    def fetch():
-        return refresh()
+        return render_latest("latest.html")
 
     @app.route("/preview")
-    def preview():
+    def preview() -> Response:
+        if isinstance(ctx.last_fetch_response, Exception):
+            return make_response(f'{ctx.last_fetch_response}', 500)
         raw_image = ctx.renderer.render(ctx.last_fetch_response)
         image_buf = io.BytesIO(b"")
         raw_image.save(image_buf, format="png")
         image_buf.seek(0)
         return send_file(image_buf, mimetype="image/png")
 
-    def render_latest(template: str):
+    def render_latest(template: str) -> str:
         if isinstance(ctx.last_fetch_response, Exception):
             most_recent_forecast = ctx.last_fetch_response  # type: Union[str,Exception]
         else:
@@ -164,7 +173,7 @@ def create_app() -> Flask:
     return app
 
 
-def format_last_update_time(last_update):
+def format_last_update_time(last_update: Optional[datetime]) -> str:
     if not last_update:
         return "never"
     since = datetime.now() - last_update
