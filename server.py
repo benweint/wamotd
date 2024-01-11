@@ -145,7 +145,7 @@ def create_app() -> Flask:
     @app.route("/preview")
     def preview() -> Response:
         if isinstance(ctx.last_fetch_response, Exception):
-            return make_response(f'{ctx.last_fetch_response}', 500)
+            return make_response(f"{ctx.last_fetch_response}", 500)
         raw_image = ctx.renderer.render(ctx.last_fetch_response)
         image_buf = io.BytesIO(b"")
         raw_image.save(image_buf, format="png")
