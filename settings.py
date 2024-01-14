@@ -1,5 +1,6 @@
 import os
 
+STORE_PATH = "store.json"
 DISPLAY_WIDTH = 250
 DISPLAY_HEIGHT = 122
 OPEN_WEATHER_TOKEN = os.environ.get("OPEN_WEATHER_TOKEN")

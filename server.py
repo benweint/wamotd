@@ -1,6 +1,7 @@
 from flask import Flask, Response, request, make_response, render_template, send_file
 from renderer import Renderer
 from fetchers import Fetcher, OpenWeatherFetcher, ExampleFetcher
+from store import Store, FileStore
 from urllib.parse import quote_plus
 from datetime import datetime, timedelta, time as datetime_time
 from typing import Any, Dict, Optional, Union
@@ -14,6 +15,9 @@ import socket
 import sys
 
 
+MOTD = "motd"
+
+
 class Context:
     def __init__(
         self,
@@ -21,6 +25,7 @@ class Context:
         renderer: Renderer,
         screensaver: Screensaver,
         ds: Optional[Surface],
+        store: Store,
     ) -> None:
         self.fetcher = fetcher
         self.renderer = renderer
@@ -30,6 +35,12 @@ class Context:
         self.motd_updated_at = None  # type: Optional[datetime]
         self.screen_updated_at = None  # type: Optional[datetime]
         self.ds = ds
+        self.store = store
+
+    def set_motd(self, motd: str) -> None:
+        self.store.set(MOTD, motd)
+        self.renderer.motd = motd
+        self.motd_updated_at = datetime.now()
 
 
 def create_app() -> Flask:
@@ -48,6 +59,11 @@ def create_app() -> Flask:
     renderer = Renderer(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
     screensaver = Screensaver(app.config["DISPLAY_WIDTH"], app.config["DISPLAY_HEIGHT"])
 
+    store = FileStore(app.config["STORE_PATH"])
+    motd = store.get(MOTD)
+    if motd:
+        renderer.motd = motd
+
     ds = None  # type: Optional[Surface]
     try:
         from device_surface import DeviceSurface
@@ -59,7 +75,7 @@ def create_app() -> Flask:
         )
 
     b = threading.Barrier(2, timeout=5)
-    ctx = Context(fetcher, renderer, screensaver, ds)
+    ctx = Context(fetcher, renderer, screensaver, ds, store)
 
     def fetch_forecast() -> Union[Dict[str, Any], Exception]:
         print("Refreshing forecast ...")
@@ -138,8 +154,7 @@ def create_app() -> Flask:
         return set_motd("")
 
     def set_motd(motd: str) -> str:
-        ctx.renderer.motd = motd
-        ctx.motd_updated_at = datetime.now()
+        ctx.set_motd(motd)
         return render_latest("latest.html")
 
     @app.route("/preview")
