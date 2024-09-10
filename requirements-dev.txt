@@ -1,4 +1,12 @@
+black==23.12.1
 mypy
-black
+mypy-extensions==1.0.0
+types-click==7.1.8
+types-Flask==1.1.6
+types-Jinja2==2.11.9
+types-MarkupSafe==1.1.10
 types-Pillow
 types-requests
+types-Werkzeug==1.0.9
+typing-extensions==4.9.0
+
