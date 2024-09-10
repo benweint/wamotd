@@ -1,3 +1,4 @@
 mypy
 black
 types-Pillow
+types-requests

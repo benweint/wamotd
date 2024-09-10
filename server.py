@@ -2,7 +2,6 @@ from flask import Flask, Response, request, make_response, render_template, send
 from renderer import Renderer
 from fetchers import Fetcher, OpenWeatherFetcher, ExampleFetcher
 from store import Store, FileStore
-from urllib.parse import quote_plus
 from datetime import datetime, timedelta, time as datetime_time
 from typing import Any, Dict, Optional, Union
 from device_types import Surface

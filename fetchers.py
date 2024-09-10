@@ -1,7 +1,6 @@
-import urllib.request
-import urllib.parse
+import requests
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from typing_extensions import Protocol
 
 
@@ -21,24 +20,24 @@ class OpenWeatherFetcher:
     def __init__(
         self, appid: str, lat: float, lon: float, units: str = "imperial"
     ) -> None:
-        self.params = {
+        self.params: Dict[str, Union[float, str]] = {
             "lat": lat,
             "lon": lon,
             "exclude": "minutely,alerts",
             "appid": appid,
             "units": units,
         }
-        self._url = DATA_SOURCE_URL + "?" + urllib.parse.urlencode(self.params)
+        self._url = DATA_SOURCE_URL
 
     def fetch(self) -> Dict[str, Any]:
-        response = urllib.request.urlopen(self._url)
-        if response.status == 200:
-            decoded = json.load(response)
+        response = requests.get(self._url, params=self.params)
+        if response.status_code == 200:
+            decoded = response.json()
             assert isinstance(decoded, Dict)
             return decoded
         else:
             raise ValueError(
-                f"bad HTTP response {response.status}, body = {response.read()}"
+                f"bad HTTP response {response.status_code}, body = {response.text}"
             )
 
     def url(self) -> str:
